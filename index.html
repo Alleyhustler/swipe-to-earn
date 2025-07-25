@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SWIPE | Solana Curation Engine</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap">
+    <style>
+        :root {
+            --bg-primary: #050505;
+            --bg-secondary: #0f0f0f;
+            --accent-primary: #9945FF;
+            --accent-secondary: #7A1BF2;
+            --text-primary: #fafafa;
+            --text-secondary: #a3a3a3;
+            --success: #14F195;
+            --danger: #FF4D4D;
+            --card-bg: linear-gradient(145deg, #121212 0%, #1a1a1a 100%);
+            --card-border: rgba(255, 255, 255, 0.05);
+            --glass: rgba(15, 15, 15, 0.65);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .app-container {
+            height: 100vh;
+            width: 100vw;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Auth Screen */
+        .auth-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+            z-index: 100;
+            padding: 2rem;
+        }
+
+        .auth-screen::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(153,69,255,0.08) 0%, rgba(153,69,255,0) 70%);
+            animation: pulse 12s infinite alternate;
+            z-index: -1;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.9); opacity: 0.3; }
+            100% { transform: scale(1.3); opacity: 0.1; }
+        }
+
+        .logo {
+            width: 280px;
+            height: 280px;
+            margin-bottom: 2rem;
+            background-image: url('sa.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+
+        .tagline {
+            font-size: 1.25rem;
+            font-weight: 400;
+            color: var(--text-secondary);
+            margin-bottom: 4rem;
+            max-width: 400px;
+            text-align: center;
+            line-height: 1.6;
+        }
+
+        .auth-cta {
+            width: 100%;
+            max-width: 300px;
+        }
+
+        .auth-btn {
+            width: 100%;
+            padding: 1rem;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 12px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .primary-btn {
+            background: var(--accent-primary);
+            color: white;
+            box-shadow: 0 4px 20px rgba(153, 69, 255, 0.3);
+        }
+
+        .primary-btn:hover {
+            background: var(--accent-secondary);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(153, 69, 255, 0.4);
+        }
+
+        .secondary-btn {
+            background: var(--glass);
+            color: var(--text-primary);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .secondary-btn:hover {
+            background: rgba(255, 255, 255, 0.05);
+            transform: translateY(-2px);
+        }
+
+        .twitter-link {
+            position: absolute;
+            bottom: 2rem;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: color 0.3s ease;
+        }
+
+        .twitter-link:hover {
+            color: var(--text-primary);
+        }
+
+        /* Main App Interface */
+        .app-interface {
+            display: none;
+            height: 100vh;
+            width: 100vw;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 10;
+        }
+
+        .wallet-display {
+            background: var(--glass);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 0.75rem 1rem;
+            font-size: 0.9rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .wallet-balance {
+            color: var(--success);
+            font-weight: 600;
+        }
+
+        .nav-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            background: var(--glass);
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .nav-icon:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* Card Stack */
+        .card-stack {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            perspective: 1000px;
+        }
+
+        .coin-card {
+            position: absolute;
+            width: 90%;
+            max-width: 380px;
+            height: 65vh;
+            max-height: 650px;
+            background: var(--card-bg);
+            border-radius: 24px;
+            border: 1px solid var(--card-border);
+            overflow: hidden;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+            transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.3, 1), opacity 0.3s ease;
+            transform-style: preserve-3d;
+            cursor: grab;
+            user-select: none;
+        }
+
+        .coin-card:active {
+            cursor: grabbing;
+        }
+
+        .card-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0.35;
+            z-index: 0;
+        }
+
+        .card-content {
+            position: relative;
+            z-index: 1;
+            padding: 2rem;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+        }
+
+        .coin-info {
+            flex: 1;
+        }
+
+        .coin-name {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+            letter-spacing: -0.02em;
+        }
+
+        .coin-symbol {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .price-data {
+            text-align: right;
+        }
+
+        .current-price {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+
+        .price-change {
+            font-size: 0.9rem;
+            font-weight: 600;
+            padding: 0.25rem 0.5rem;
+            border-radius: 6px;
+            display: inline-block;
+        }
+
+        .positive {
+            background: rgba(20, 241, 149, 0.15);
+            color: var(--success);
+        }
+
+        .negative {
+            background: rgba(255, 77, 77, 0.15);
+            color: var(--danger);
+        }
+
+        .neutral {
+            background: rgba(163, 163, 163, 0.15);
+            color: var(--text-secondary);
+        }
+
+        .contract-section {
+            margin-top: auto;
+        }
+
+        .contract-label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .contract-address {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.85rem;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 0.75rem;
+            border-radius: 8px;
+            word-break: break-all;
+            line-height: 1.5;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .swipe-stats {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 1.5rem;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .swipe-indicator {
+            display: flex;
+            align-items: center;
+        }
+
+        .swipe-bar {
+            height: 4px;
+            border-radius: 2px;
+            background: rgba(255, 255, 255, 0.1);
+            flex: 1;
+            margin: 0 0.5rem;
+            overflow: hidden;
+        }
+
+        .swipe-fill {
+            height: 100%;
+            background: var(--accent-primary);
+            width: 70%;
+        }
+
+        /* Action Buttons */
+        .action-bar {
+            position: absolute;
+            bottom: 2rem;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            z-index: 10;
+            padding: 0 2rem;
+        }
+
+        .action-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .action-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .reject-btn {
+            background: var(--danger);
+        }
+
+        .accept-btn {
+            background: var(--success);
+        }
+
+        .action-icon {
+            width: 24px;
+            height: 24px;
+        }
+
+        /* Feedback Toast */
+        .toast {
+            position: fixed;
+            bottom: 5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            font-weight: 600;
+            z-index: 100;
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.2, 0.8, 0.3, 1);
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            pointer-events: none;
+        }
+
+        .toast-visible {
+            opacity: 1;
+            transform: translateX(-50%) translateY(-10px);
+        }
+
+        .toast-success {
+            background: rgba(20, 241, 149, 0.2);
+            color: var(--success);
+            border: 1px solid rgba(20, 241, 149, 0.3);
+        }
+
+        .toast-danger {
+            background: rgba(255, 77, 77, 0.2);
+            color: var(--danger);
+            border: 1px solid rgba(255, 77, 77, 0.3);
+        }
+
+        /* Responsive Adjustments */
+        @media (max-width: 768px) {
+            .logo {
+                width: 140px;
+                height: 140px;
+                margin-bottom: 1.5rem;
+            }
+            
+            .tagline {
+                font-size: 1rem;
+                margin-bottom: 3rem;
+            }
+            
+            .coin-card {
+                height: 60vh;
+            }
+            
+            .coin-name {
+                font-size: 1.5rem;
+            }
+            
+            .current-price {
+                font-size: 1.25rem;
+            }
+        }
+
+        /* Animation Classes */
+        .swipe-right {
+            transform: translateX(120%) rotate(15deg) !important;
+            opacity: 0 !important;
+        }
+
+        .swipe-left {
+            transform: translateX(-120%) rotate(-15deg) !important;
+            opacity: 0 !important;
+        }
+
+        .scale-up {
+            transform: scale(1.05);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3) !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Authentication Screen -->
+        <div class="auth-screen" id="authScreen">
+            <div class="logo"></div>
+            <p class="tagline">Swipe through the trenches<br>Match and earn Tokens by finding the next Gem</p>
+            <div class="auth-cta">
+                <button class="auth-btn primary-btn" id="connectWallet">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" stroke-width="2"/>
+                        <path d="M16 12L12 12M12 12L8 12M12 12L12 8M12 12L12 16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                    Connect Phantom
+                </button>
+                <button class="auth-btn secondary-btn" id="continueDemo">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 15C13.6569 15 15 13.6569 15 12C15 10.3431 13.6569 9 12 9C10.3431 9 9 10.3431 9 12C9 13.6569 10.3431 15 12 15Z" stroke="currentColor" stroke-width="2"/>
+                        <path d="M19.4 15C19.2669 15.3016 19.227 15.6363 19.2863 15.9606C19.3455 16.2849 19.5008 16.5813 19.7285 16.8085C19.9562 17.0357 20.2433 17.1818 20.5616 17.2249C20.88 17.268 21.2114 17.2054 21.5 17.05" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        <path d="M4.6 15C4.73312 15.3016 4.77296 15.6363 4.7137 15.9606C4.65444 16.2849 4.49923 16.5813 4.27155 16.8085C4.04386 17.0357 3.75668 17.1818 3.43835 17.2249C3.12002 17.268 2.78863 17.2054 2.5 17.05" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        <path d="M17.05 4.5C17.2054 4.78863 17.268 5.12002 17.2249 5.43835C17.1818 5.75668 17.0357 6.04386 16.8085 6.27155C16.5813 6.49923 16.2849 6.65444 15.9606 6.7137C15.6363 6.77296 15.3016 6.73312 15 6.6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        <path d="M6.95 4.5C6.79464 4.78863 6.73204 5.12002 6.77511 5.43835C6.81818 5.75668 6.96427 6.04386 7.19149 6.27155C7.4187 6.49923 7.7151 6.65444 8.03944 6.7137C8.36377 6.77296 8.69836 6.73312 9 6.6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                    Demo Mode
+                </button>
+            </div>
+            <a href="https://twitter.com/SwipetoEarn" class="twitter-link" target="_blank">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M23 3.01006C23 3.01006 20.9821 4.20217 19.86 4.54006C19.2577 3.84757 18.4573 3.35675 17.567 3.13398C16.6767 2.91122 15.7395 2.96725 14.8821 3.29451C14.0247 3.62177 13.2884 4.20446 12.773 4.96377C12.2575 5.72309 11.9877 6.62239 12 7.54006V8.54006C10.2426 8.58562 8.50127 8.19587 6.93101 7.4055C5.36074 6.61513 4.01032 5.44869 3 4.01006C3 4.01006 -1 13.0101 8 17.0101C5.94053 18.408 3.48716 19.109 1 19.0101C10 24.0101 21 19.0101 21 7.51006C20.9991 7.23151 20.9723 6.95365 20.92 6.68006C21.9406 5.67355 23 3.01006 23 3.01006Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                @SwipetoEarn
+            </a>
+        </div>
+
+        <!-- Main App Interface -->
+        <div class="app-interface" id="appInterface">
+            <div class="header">
+                <div class="wallet-display">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" stroke-width="2"/>
+                        <path d="M16 12L12 12M12 12L8 12M12 12L12 8M12 12L12 16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                    <span id="walletAddress">Not connected</span>
+                    <span class="wallet-balance" id="walletBalance">0 SOL</span>
+                </div>
+                <div class="nav-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M3 12H21M3 6H21M3 18H21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+            </div>
+
+            <!-- Card Stack -->
+            <div class="card-stack" id="cardStack">
+                <!-- Cards will be dynamically inserted here -->
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="action-bar">
+                <button class="action-btn reject-btn" id="rejectBtn">
+                    <svg class="action-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M18 6L6 18" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M6 6L18 18" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </button>
+                <button class="action-btn accept-btn" id="acceptBtn">
+                    <svg class="action-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M20 6L9 17L4 12" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Feedback Toast -->
+        <div class="toast" id="toast">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12Z" stroke="currentColor" stroke-width="2"/>
+                <path d="M12 16V12M12 8H12.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            <span id="toastMessage"></span>
+        </div>
+    </div>
+
+    <!-- Phantom Wallet SDK -->
+    <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
+    <script>
+        // Phantom Wallet Integration
+        const connectWallet = async () => {
+            try {
+                // Check if Phantom is installed
+                if (!window.solana || !window.solana.isPhantom) {
+                    showToast("Phantom wallet not found", "danger");
+                    return;
+                }
+
+                // Connect to wallet
+                const response = await window.solana.connect();
+                const publicKey = response.publicKey.toString();
+                
+                // Update UI
+                document.getElementById('walletAddress').textContent = 
+                    `${publicKey.substring(0, 4)}...${publicKey.substring(publicKey.length - 4)}`;
+                
+                // Get balance
+                const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl('mainnet-beta'));
+                const balance = await connection.getBalance(response.publicKey);
+                const solBalance = (balance / solanaWeb3.LAMPORTS_PER_SOL).toFixed(2);
+                document.getElementById('walletBalance').textContent = `${solBalance} SOL`;
+                
+                // Show app interface
+                showToast("Phantom wallet connected", "success");
+                setTimeout(() => {
+                    authScreen.style.display = 'none';
+                    appInterface.style.display = 'block';
+                    activateCard(0);
+                }, 1000);
+                
+            } catch (error) {
+                console.error("Wallet connection error:", error);
+                showToast("Connection failed", "danger");
+            }
+        };
+
+        // Sample Solana Coin Data
+        const coins = [
+            {
+                name: "Samoyed",
+                symbol: "SAMO",
+                price: "0.024 SOL",
+                change: "+14.8%",
+                changeType: "positive",
+                contract: "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU",
+                bgImage: "samo.png",
+                positive: true
+            },
+            {
+                name: "Bonk",
+                symbol: "BONK",
+                price: "0.0000042 SOL",
+                change: "-69.7%",
+                changeType: "negative",
+                contract: "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263",
+                bgImage: "bonk.png",
+                positive: false
+            },
+            {
+                name: "Orca",
+                symbol: "ORCA",
+                price: "1.42 SOL",
+                change: "+32.5%",
+                changeType: "positive",
+                contract: "orcaEKTdK7LKz57vaAYr9QeNsVEPfiu6QeMU1kektZE",
+                bgImage: "orc.png",
+                positive: true
+            },
+            {
+                name: "Dogelana",
+                symbol: "DGLN",
+                price: "0.0000 SOL",
+                change: "-100%",
+                changeType: "negative",
+                contract: "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM",
+                bgImage: "dogelana.png",
+                positive: false
+            },
+            {
+                name: "Step Finance",
+                symbol: "STEP",
+                price: "0.087 SOL",
+                change: "+8.5%",
+                changeType: "positive",
+                contract: "StepAscQoEioFxxWGnh2sLBDFp9d8rvKz2Yp39iDpyT",
+                bgImage: "step fin.png",
+                positive: true
+            }
+        ];
+
+        // DOM Elements
+        const authScreen = document.getElementById('authScreen');
+        const appInterface = document.getElementById('appInterface');
+        const cardStack = document.getElementById('cardStack');
+        const connectWalletBtn = document.getElementById('connectWallet');
+        const continueDemoBtn = document.getElementById('continueDemo');
+        const rejectBtn = document.getElementById('rejectBtn');
+        const acceptBtn = document.getElementById('acceptBtn');
+        const toast = document.getElementById('toast');
+        const toastMessage = document.getElementById('toastMessage');
+        const walletBalance = document.getElementById('walletBalance');
+
+        // App State
+        let currentCardIndex = 0;
+        let activeCard = null;
+        let startX, startY, moveX, moveY;
+        let isDragging = false;
+        let demoBalance = 10.00;
+
+        // Initialize App
+        function init() {
+            connectWalletBtn.addEventListener('click', connectWallet);
+            continueDemoBtn.addEventListener('click', startDemo);
+            createCards();
+            setupSwipeListeners();
+        }
+
+        // Start Demo Mode
+        function startDemo() {
+            document.getElementById('walletAddress').textContent = "Demo Mode";
+            walletBalance.textContent = `${demoBalance.toFixed(2)} SOL`;
+            continueDemoBtn.classList.add('active');
+            showToast("Demo mode activated", "success");
+            setTimeout(() => {
+                authScreen.style.display = 'none';
+                appInterface.style.display = 'block';
+                activateCard(0);
+            }, 1000);
+        }
+
+        // Create Coin Cards
+        function createCards() {
+            coins.forEach((coin, index) => {
+                const card = document.createElement('div');
+                card.className = 'coin-card';
+                card.dataset.index = index;
+                card.style.display = 'none';
+                card.style.zIndex = coins.length - index;
+                
+                card.innerHTML = `
+                    <img src="${coin.bgImage}" class="card-bg" alt="${coin.name} background">
+                    <div class="card-content">
+                        <div class="card-header">
+                            <div class="coin-info">
+                                <div class="coin-name">${coin.name}</div>
+                                <div class="coin-symbol">${coin.symbol}</div>
+                            </div>
+                            <div class="price-data">
+                                <div class="current-price">${coin.price}</div>
+                                <div class="price-change ${coin.changeType}">${coin.change}</div>
+                            </div>
+                        </div>
+                        <div class="contract-section">
+                            <div class="contract-label">Contract Address</div>
+                            <div class="contract-address">${coin.contract}</div>
+                            <div class="swipe-stats">
+                                <span>Swipe rating</span>
+                                <div class="swipe-bar">
+                                    <div class="swipe-fill" style="width: ${Math.floor(Math.random() * 60) + 40}%"></div>
+                                </div>
+                                <span>${Math.floor(Math.random() * 40) + 60}%</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                cardStack.appendChild(card);
+            });
+        }
+
+        // Activate Card
+        function activateCard(index) {
+            if (index >= coins.length) {
+                // End of stack - reshuffle
+                currentCardIndex = 0;
+                setTimeout(() => {
+                    showToast("Refreshing coin stack...", "success");
+                    resetCards();
+                }, 800);
+                return;
+            }
+
+            const cards = document.querySelectorAll('.coin-card');
+            cards.forEach(card => card.style.display = 'none');
+            
+            activeCard = cards[index];
+            activeCard.style.display = 'flex';
+            currentCardIndex = index;
+
+            // Add hover effect
+            activeCard.addEventListener('mouseenter', () => {
+                activeCard.classList.add('scale-up');
+            });
+            
+            activeCard.addEventListener('mouseleave', () => {
+                activeCard.classList.remove('scale-up');
+            });
+        }
+
+        // Setup Swipe Listeners
+        function setupSwipeListeners() {
+            // Mouse/touch events for dragging
+            cardStack.addEventListener('mousedown', startDrag);
+            cardStack.addEventListener('touchstart', startDrag, { passive: false });
+            
+            document.addEventListener('mousemove', drag);
+            document.addEventListener('touchmove', drag, { passive: false });
+            
+            document.addEventListener('mouseup', endDrag);
+            document.addEventListener('touchend', endDrag);
+            
+            // Button events
+            rejectBtn.addEventListener('click', () => swipeCard('left'));
+            acceptBtn.addEventListener('click', () => swipeCard('right'));
+        }
+
+        // Start Drag
+        function startDrag(e) {
+            if (!activeCard) return;
+            
+            isDragging = true;
+            const clientX = e.clientX || e.touches[0].clientX;
+            const clientY = e.clientY || e.touches[0].clientY;
+            
+            startX = clientX;
+            startY = clientY;
+            
+            activeCard.style.transition = 'none';
+            activeCard.classList.remove('scale-up');
+        }
+
+        // During Drag
+        function drag(e) {
+            if (!isDragging || !activeCard) return;
+            
+            e.preventDefault();
+            
+            const clientX = e.clientX || e.touches[0].clientX;
+            const clientY = e.clientY || e.touches[0].clientY;
+            
+            moveX = clientX - startX;
+            moveY = clientY - startY;
+            
+            // Calculate rotation based on horizontal movement
+            const rotate = moveX * 0.1;
+            
+            // Apply transform
+            activeCard.style.transform = `translate(${moveX}px, ${moveY}px) rotate(${rotate}deg)`;
+            
+            // Change opacity based on swipe distance
+            const opacity = 1 - Math.min(Math.abs(moveX) / 200, 0.5);
+            activeCard.style.opacity = opacity;
+        }
+
+        // End Drag
+        function endDrag() {
+            if (!isDragging || !activeCard) return;
+            
+            isDragging = false;
+            activeCard.style.transition = 'transform 0.5s cubic-bezier(0.2, 0.8, 0.3, 1), opacity 0.5s ease';
+            
+            // Check if swipe distance is enough to trigger action
+            if (Math.abs(moveX) > 100) {
+                if (moveX > 0) {
+                    swipeCard('right');
+                } else {
+                    swipeCard('left');
+                }
+            } else {
+                // Return to original position
+                activeCard.style.transform = 'translate(0, 0) rotate(0deg)';
+                activeCard.style.opacity = '1';
+                activeCard.classList.add('scale-up');
+            }
+        }
+
+        // Swipe Card
+        function swipeCard(direction) {
+            if (!activeCard) return;
+            
+            const isRight = direction === 'right';
+            const coin = coins[currentCardIndex];
+            
+            // Remove hover effect
+            activeCard.classList.remove('scale-up');
+            
+            // Animate card out
+            activeCard.classList.add(isRight ? 'swipe-right' : 'swipe-left');
+            
+            // Update balance in demo mode
+            if (continueDemoBtn.classList.contains('active')) {
+                const change = isRight ? 
+                    (coin.positive ? (Math.random() * 2) : -Math.random() * 1.5) : 
+                    -Math.random() * 0.5;
+                
+                demoBalance += change;
+                demoBalance = Math.max(demoBalance, 0);
+                walletBalance.textContent = `${demoBalance.toFixed(2)} SOL`;
+            }
+            
+            // Show feedback
+            showFeedback(isRight, coin);
+            
+            // Move to next card
+            setTimeout(() => {
+                activateCard(currentCardIndex + 1);
+            }, 300);
+        }
+
+        // Show Feedback Toast
+        function showFeedback(isRight, coin) {
+            if (isRight) {
+                if (coin.positive) {
+                    const earnings = (Math.random() * 2).toFixed(4);
+                    showToast(`+${earnings} SOL | Matched with ${coin.name}`, "success");
+                } else {
+                    const loss = (Math.random() * 1.5).toFixed(4);
+                    showToast(`-${loss} SOL | ${coin.name} rugged`, "danger");
+                }
+            } else {
+                showToast(`Passed on ${coin.name}`, "danger");
+            }
+        }
+
+        // Show Toast Message
+        function showToast(message, type) {
+            toastMessage.textContent = message;
+            toast.className = `toast toast-visible toast-${type}`;
+            
+            setTimeout(() => {
+                toast.className = 'toast';
+            }, 3000);
+        }
+
+        // Reset All Cards
+        function resetCards() {
+            const cards = document.querySelectorAll('.coin-card');
+            cards.forEach(card => {
+                card.classList.remove('swipe-right', 'swipe-left');
+                card.style.transform = 'translate(0, 0) rotate(0deg)';
+                card.style.opacity = '1';
+                card.style.transition = 'none';
+            });
+            
+            setTimeout(() => {
+                activateCard(0);
+            }, 50);
+        }
+
+        // Initialize the app
+        window.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
